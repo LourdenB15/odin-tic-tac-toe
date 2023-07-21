@@ -1,3 +1,18 @@
+const open = document.querySelector('button');
+const dialog = document.querySelector('dialog');
+const submit = document.querySelector('[type="submit"]');
+const p1 = document.querySelector('#p1');
+const p2 = document.querySelector('#p2');
+open.addEventListener('click', () => {
+  dialog.showModal();
+});
+submit.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (!p1.value || !p2.value) return;
+  dialog.close();
+  game = GameController(p1.value, p2.value);
+});
+let game;
 function Gameboard() {
   const rows = 3;
   const columns = 3;
@@ -11,7 +26,7 @@ function Gameboard() {
   const gameReset = () => {
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < columns; j++) {
-        board[i][j].addMark(0);
+        board[i][j].markSpot(0);
       }
     }
   };
@@ -46,34 +61,30 @@ function Cell() {
 }
 
 // Game controller function
-function GameController(
-  playerOneName = 'Player One',
-  playerTwoName = 'Player Two'
-) {
+function GameController(playerOneName, playerTwoName) {
   const board = Gameboard();
+  function createPlayer(playerName, playerMark) {
+    const name = playerName;
+    const mark = playerMark;
+    let score = 0;
+    const getName = () => name;
+    const getScore = () => score;
+    const getMark = () => mark;
+    const won = () => ++score;
+    return { getName, won, getScore, getMark };
+  }
   const players = [
-    {
-      name: playerOneName,
-      token: 1,
-      score: 0,
-    },
-    {
-      name: playerTwoName,
-      token: 2,
-      score: 0,
-    },
+    createPlayer(playerOneName, 1),
+    createPlayer(playerTwoName, 2),
   ];
   let activePlayer = players[0];
   const switchPlayerTurn = () => {
     activePlayer = activePlayer === players[0] ? players[1] : players[0];
   };
+
   const getActivePlayer = () => activePlayer;
   const printNewRound = () => {
     board.printBoard();
-    if ((!checkWinner() && !isVacant()) || checkWinner()) {
-      return;
-    }
-    console.log(`${getActivePlayer().name}'s turn.`);
   };
 
   const checkWinner = () => {
@@ -133,7 +144,7 @@ function GameController(
     return false;
   };
 
-  const reset = () => {
+  const rematch = () => {
     board.gameReset();
     printNewRound();
   };
@@ -152,25 +163,19 @@ function GameController(
   };
 
   const playRound = (row, column) => {
-    if (isGameover()) {
-      console.log('Gameover!');
-      return;
-    }
-    const markSuccess = board.markSpot(row, column, getActivePlayer().token);
+    const markSuccess = board.markSpot(
+      row,
+      column,
+      getActivePlayer().getMark()
+    );
     // run your check winner function here
-    const gameOver = isGameover();
-    if (markSuccess && !gameOver) {
-      switchPlayerTurn();
-    }
+    switchPlayerTurn();
     printNewRound();
   };
-
   printNewRound();
   return {
     playRound,
     getActivePlayer,
-    reset,
+    rematch,
   };
 }
-
-const game = GameController();
